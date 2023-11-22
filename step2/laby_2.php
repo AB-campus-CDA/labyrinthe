@@ -68,6 +68,7 @@ $goalFound = false;
 $step = 0;
 $cellId = 1;
 $movedThisTurn = false;
+$onMyWayBackToThePreviousCrossroad = false;
 
 $listOfCrossroads = []; // crossroad = last step value
 
@@ -145,9 +146,14 @@ function changeDir($value):void {
 
 
 function movePlayer():void {
-    global $map, $step, $cellId, $playerCoord, $indexDir;
+    global $map, $step, $cellId, $playerCoord, $indexDir, $onMyWayBackToThePreviousCrossroad;
 
-    $map[$playerCoord[0]][$playerCoord[1]] = sprintf("%02d", $cellId);
+    if (!$onMyWayBackToThePreviousCrossroad) {
+        $map[$playerCoord[0]][$playerCoord[1]] = sprintf("%02d", $cellId);
+    } else {
+        $map[$playerCoord[0]][$playerCoord[1]] = '::';
+    }
+
     switch (dir[$indexDir]) {
         case "S":
             $playerCoord[0]++;
@@ -271,6 +277,7 @@ while (!$goalFound) {
                         $closestCrossroad = abs($val - $listOfCrossroads[array_key_last($listOfCrossroads)]);
                         $indexDir = $i;
                     }
+                    $onMyWayBackToThePreviousCrossroad = true;
                 }
             }
 
@@ -303,6 +310,10 @@ while (!$goalFound) {
         unset($listOfCrossroads[$key]);
         $listOfCrossroads = array_values($listOfCrossroads);
         //print_r("crossroad cleared\n");
+        $onMyWayBackToThePreviousCrossroad = false;
+
+        // reprise de la numérotation à partir de ce carrefour :
+        $cellId = $map[$playerCoord[0]][$playerCoord[1]];
     }
 
     //print_r("end of loop\n");
@@ -316,3 +327,4 @@ $w3++;
 }
 
 print_r("GAME OVER !\n");
+

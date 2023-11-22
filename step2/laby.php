@@ -216,7 +216,7 @@ print_r("LOOP BEGIN HERE ----------------------------\n");
     } // end of while (!$movedThisTurn)
 
     // but atteint ?
-    if (checkGoal($playerCoord)) {
+    if (checkIfGoalReached($playerCoord)) {
         print_r("GOAL FOUND !\n");
         print_r("\n");
         $goalFound = true;

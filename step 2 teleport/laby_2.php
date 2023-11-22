@@ -60,7 +60,7 @@ $map3 = [
 const coordStart = [1,1]; // [y,x]
 const coordGoal = [8,4];
 
-const speed = 3*100000000; // ns
+const speed = 1*100000000; // ns
 
 const dir = ["S","E","N","W"];
 $indexDir = 0;
@@ -70,9 +70,11 @@ $goalFound = false;
 $step = 0;
 $cellId = 1;
 $movedThisTurn = false;
-$onMyWayBackToThePreviousCrossroad = false;
+$teleporting = false;
 
-$listOfCrossroads = []; // crossroad = last step value
+$listOfCrossroadsId = []; // crossroad = cellId
+$listOfCrossroadsCoord = []; // crossroad = COORD
+$path = [];
 
 
 // GAME FUNCTIONS
@@ -94,9 +96,19 @@ function showMap():void {
 }
 
 function showStep():void {
-    global $step, $listOfCrossroads;
+    global $step, $cellId, $listOfCrossroadsId, $listOfCrossroadsCoord;
     print_r("step: " . ($step) . "\n");
-    print_r( "list of crossroads : " . join(', ', $listOfCrossroads )."\n");
+    print_r( "list of crossroads id : " . join(', ', $listOfCrossroadsId )."\n");
+
+    $CRcoords = "";
+    foreach ($listOfCrossroadsCoord as $coord) {
+        $CRcoords .= "{".join(',',$coord)."} ";
+    }
+    print_r( "list of crossroads coord : " . $CRcoords ."\n");
+    print_r("cellId: " . ($cellId) . "\n");
+    print_r("\n");
+    print_r("\n");
+    print_r("\n");
 }
 
 
@@ -146,15 +158,21 @@ function changeDir($value):void {
     }
 }
 
+function updatePath():void {
+    global $cellId, $path, $playerCoord;
+
+    if ($cellId > count($path)) {
+        array_push($path, $playerCoord);
+    } else {
+        $path[$cellId-1] = $playerCoord;
+    }
+}
+
 
 function movePlayer():void {
-    global $map, $step, $cellId, $playerCoord, $indexDir, $onMyWayBackToThePreviousCrossroad;
+    global $map, $step, $cellId, $playerCoord, $indexDir;
 
-    if (!$onMyWayBackToThePreviousCrossroad) {
         $map[$playerCoord[0]][$playerCoord[1]] = sprintf("%02d", $cellId);
-    } else {
-        $map[$playerCoord[0]][$playerCoord[1]] = '::';
-    }
 
     switch (dir[$indexDir]) {
         case "S":
@@ -175,22 +193,29 @@ function movePlayer():void {
     $cellId++;
     showMap();
     showStep();
+    updatePath();
 }
+
+
 
 $w1 = 0;
 $w2 = 0;
 $w3 = 0;
 
+// include start cell in path
+updatePath();
+
 while (!$goalFound) {
-//print_r("LOOP BEGIN HERE ----------------------------\n");
 
     $movedThisTurn = false;
 
+    $w1 =0;
     while (!$movedThisTurn) {
-        //print_r("no move\n");
+        $w1++;
+        if ($w1>5) {print_r("w1");}
+
         $tryNotVisited = true;
         $tryVisited = true;
-
 
         // coup de radar : pour trouver les carrefours et éventuellement le goal
         $nOfWay = 0;
@@ -199,7 +224,8 @@ while (!$goalFound) {
             if (checkDir(dir[$i]) === '  ') {
                 $nOfWay++;
                 if ($nOfWay === 2) { // 2 to avoid duplicates
-                    $listOfCrossroads[] = $cellId;
+                    $listOfCrossroadsId[] = $cellId;
+                    $listOfCrossroadsCoord[] = $playerCoord;
                 }
             }
 
@@ -213,14 +239,11 @@ while (!$goalFound) {
         }
 
         // on sonde les cases devant, à gauche et à droite
-        $w1 = 0;
+        $w2 = 0;
         while ($tryNotVisited) {
-            //print_r("try not visited\n");
-            $w1++;
-            if ($w1 > 10) {
-                $tryNotVisited = false;
-                print_r("w1\n");
-            }
+            $w2++;
+            if ($w2>10) {print_r("w2");}
+
             // d'abord les cases non visitées
             if (checkDir(dir[$indexDir]) === "  ") {
                 // si pas de mur ET pas visitée on avance
@@ -239,53 +262,48 @@ while (!$goalFound) {
         }
 
         if ($movedThisTurn) {
-            //print_r("moved this turn\n");
             break;
         }
 
-
-        $w2 = 0;
         // ensuite les cases visitées
         while ($tryVisited) {
-            //print_r("try visited\n");
-            //print_r('dir is ' . dir[$indexDir] . "\n");
-            $w2++;
-            if ($w2 > 100) {
-                $tryVisited = false;
-                print_r("w2\n");
-            }
+
 // si pas le choix, je cherche une case déjà visitée avec le moins de riz
             $oldestPath = 999;
-            $closestCrossroad = 999;
 
-            for ($i=0; $i<count(dir); $i++) {
-                $val = intval(checkDir(dir[$i]), 10 );
+            // est-ce qu'il y a un carrefour a visiter avant ?
+            if (count($listOfCrossroadsId) === 0) {
+                $failures = 0;
 
-                // est-ce qu'il y a un carrefour a visiter avant ?
-                //print_r("try crossroads : ");
-                if (count($listOfCrossroads) === 0) {
-                    //print_r("no crossroads\n");
-                    $failures = 0; // je vais continuer à chercher une case sans mur
+                // je vais continuer à chercher une case sans mur
+                for ($i=0; $i<count(dir); $i++) {
+                    $val = intval(checkDir(dir[$i]), 10);
 
                     if ($val > 0 && $val < $oldestPath) { // /!\ 0 serait un mur
-                        $oldestPath = intval(checkDir(dir[$i]), 10 );
+                        $oldestPath = intval(checkDir(dir[$i]), 10);
                         $indexDir = $i;
                     }
-                } else {
-                    //print_r("way back to crossroads\n");
-                    $failures = 0;
-
-                    if ($val > 0 && abs($val - $listOfCrossroads[array_key_last($listOfCrossroads)]) < $closestCrossroad) { // /!\ 0 serait un mur
-                        $closestCrossroad = abs($val - $listOfCrossroads[array_key_last($listOfCrossroads)]);
-                        $indexDir = $i;
-                    }
-                    $onMyWayBackToThePreviousCrossroad = true;
                 }
+
+            } else {
+                // teleport to last crossroad
+                $map[$playerCoord[0]][$playerCoord[1]] = sprintf("%02d", $cellId);
+                $playerCoord = $listOfCrossroadsCoord[array_key_last($listOfCrossroadsCoord)];
+                $teleporting = true;
+                $movedThisTurn = true;
+                $tryVisited = false;
+                time_nanosleep(0,speed); // 0.1 sec
+                $step++;
+                $cellId = $listOfCrossroadsId[array_key_last($listOfCrossroadsId)];
+                showMap();
+                showStep();
             }
 
-            movePlayer();
-            $movedThisTurn = true;
-            $tryVisited = false;
+            if (!$teleporting) {
+                movePlayer();
+                $movedThisTurn = true;
+                $tryVisited = false;
+            }
         }
 
 
@@ -294,39 +312,42 @@ while (!$goalFound) {
 
     // ici on s'est déplacé
 
-
     // but atteint ?
     if (checkIfGoalReached()) {
         print_r("GOAL FOUND !\n");
         print_r("\n");
         $goalFound = true;
     } else {
-        //print_r("reset failures\n");
         $failures = 0;
     }
 
+    // je viens d'etre téléporté sur le dernier carrefour
+    if ($teleporting) {
+        $teleporting = false;
 
-    // si je suis sur un carrefour de la liste, je le retire
-    if (in_array($map[$playerCoord[0]][$playerCoord[1]], $listOfCrossroads)) {
-        $key = array_search($map[$playerCoord[0]][$playerCoord[1]], $listOfCrossroads); // objectif : la valeur supprimée est la dernière
-        unset($listOfCrossroads[$key]);
-        $listOfCrossroads = array_values($listOfCrossroads);
-        //print_r("crossroad cleared\n");
-        $onMyWayBackToThePreviousCrossroad = false;
-
-        // reprise de la numérotation à partir de ce carrefour :
-        $cellId = $map[$playerCoord[0]][$playerCoord[1]];
-    }
-
-    //print_r("end of loop\n");
-$w3++;
-    // secu pour éviter la boucle infinie
-    if ($w3 === 150) {
-        print_r("w3\n");
-        $goalFound = true;
+        array_pop($listOfCrossroadsId);
+        array_pop($listOfCrossroadsCoord);
     }
 
 }
 
-print_r("GAME OVER !\n");
+if ($goalFound) {
 
+    // clean the path
+    $path = array_slice($path, 0, intval($cellId-1));
+    foreach ($path as $key => $coord) {
+        $path[$key] = "{".join(',',$coord)."} ";
+    }
+    // add goal to path
+    $goal = "{".join(',',coordGoal)."} ";
+    array_push($path, $goal);
+
+    print_r("YOUR BEST PATH :\n");
+    print_r(join(' -> ', $path )."\n");
+
+} else {
+    print_r("GAME OVER !\n");
+}
+
+print_r("\n");
+print_r("------------------------------------------------------------------------\n");

@@ -1,17 +1,20 @@
 <?php
 
-$map2 = [
-    ["##","##","##","##","##","##","##","##","##"],
-    ["##","  ","##","  ","  ","  ","  ","  ","##"],
-    ["##","  ","##","  ","##","##","  ","##","##"],
-    ["##","  ","##","  ","##","  ","  ","  ","##"],
-    ["##","  ","  ","  ","  ","##","##","  ","##"],
-    ["##","  ","##","  ","##","  ","  ","  ","##"],
-    ["##","  ","##","  ","  ","  ","##","  ","##"],
-    ["##","##","##","##","##","##","##","##","##"],
+$map = [
+    ["##","##","##","##","##","##","##","##","##","##","##"],
+    ["##","  ","##","  ","  ","  ","  ","  ","  ","  ","##"],
+    ["##","  ","##","  ","##","##","##","  ","##","##","##"],
+    ["##","  ","##","  ","##","  ","  ","  ","  ","  ","##"],
+    ["##","  ","  ","  ","  ","##","##","##","  ","  ","##"],
+    ["##","  ","##","  ","##","  ","  ","  ","  ","  ","##"],
+    ["##","  ","##","  ","  ","  ","  ","##","  ","  ","##"],
+    ["##","##","##","##","##","##","##","##","##","  ","##"],
+    ["##","##","##","##","##","##","##","##","##","  ","##"],
+    ["##","##","##","##","##","##","##","##","##","  ","##"],
+    ["##","##","##","##","##","##","##","##","##","##","##"],
 ];
 
-$map = [
+$map2 = [
     ["##","##","##","##","##","##","##","##","##","##","##","##","##","##"],
     ["##","  ","  ","  ","  ","  ","  ","  ","  ","  ","  ","  ","  ","##"],
     ["##","  ","##","##","##","  ","##","  ","##","##","  ","##","##","##"],
@@ -52,8 +55,8 @@ $map3 = [
 
 
 // GAME VARIABLES
-const coordStart = [4,1]; // [y,x]
-const coordGoal = [7,4];
+const coordStart = [1,1]; // [y,x]
+const coordGoal = [9,9];
 
 const speed = 3*100000000; // ns
 
@@ -95,8 +98,8 @@ function showStep():void {
 
 
 // GAME API
-function checkDir($playerCoord, $dir) {
-    global $map;
+function checkDir($dir) {
+    global $map, $playerCoord;
     switch ($dir) {
         case "S":
             return $map[$playerCoord[0]+1][$playerCoord[1]];
@@ -108,10 +111,10 @@ function checkDir($playerCoord, $dir) {
             return $map[$playerCoord[0]][$playerCoord[1]-1];
     }
 }
-function checkIfGoalOnSigh($playerCoord, $dir) {
-    global $map;
+
+function checkIfGoalOnSigh($dir):bool {
+    global $playerCoord;
     switch ($dir) {
-        //
         case "S":
             return $playerCoord[0]+1 === coordGoal[0] && $playerCoord[1] === coordGoal[1];
         case "E":
@@ -121,9 +124,11 @@ function checkIfGoalOnSigh($playerCoord, $dir) {
         case "W":
             return $playerCoord[0] === coordGoal[0] && $playerCoord[1]-1 === coordGoal[1];
     }
+    return false;
 }
 
-function checkIfGoalReached($playerCoord) {
+function checkIfGoalReached():bool {
+    global $playerCoord;
     return ($playerCoord[0] === coordGoal[0] && $playerCoord[1] === coordGoal[1]);
 }
 
@@ -183,14 +188,14 @@ while (!$goalFound) {
         $nOfWay = 0;
         for ($i=0; $i<count(dir); $i++) {
 
-            if (checkDir($playerCoord, dir[$i]) === '  ') {
+            if (checkDir(dir[$i]) === '  ') {
                 $nOfWay++;
                 if ($nOfWay === 2) { // 2 to avoid duplicates
                     $listOfCrossroads[] = $cellId;
                 }
             }
 
-            if (checkIfGoalOnSigh($playerCoord, dir[$i])) {
+            if (checkIfGoalOnSigh(dir[$i])) {
                 $indexDir = $i;
                 movePlayer();
                 $movedThisTurn = true;
@@ -209,7 +214,7 @@ while (!$goalFound) {
                 print_r("w1\n");
             }
             // d'abord les cases non visitées
-            if (checkDir($playerCoord, dir[$indexDir]) === "  ") {
+            if (checkDir(dir[$indexDir]) === "  ") {
                 // si pas de mur ET pas visitée on avance
                 movePlayer();
                 $movedThisTurn = true;
@@ -246,7 +251,7 @@ while (!$goalFound) {
             $closestCrossroad = 999;
 
             for ($i=0; $i<count(dir); $i++) {
-                $val = intval(checkDir($playerCoord, dir[$i]), 10 );
+                $val = intval(checkDir(dir[$i]), 10 );
 
                 // est-ce qu'il y a un carrefour a visiter avant ?
                 //print_r("try crossroads : ");
@@ -255,7 +260,7 @@ while (!$goalFound) {
                     $failures = 0; // je vais continuer à chercher une case sans mur
 
                     if ($val > 0 && $val < $oldestPath) { // /!\ 0 serait un mur
-                        $oldestPath = intval(checkDir($playerCoord, dir[$i]), 10 );
+                        $oldestPath = intval(checkDir(dir[$i]), 10 );
                         $indexDir = $i;
                     }
                 } else {
@@ -269,7 +274,7 @@ while (!$goalFound) {
                 }
             }
 
-            movePlayer($playerCoord, dir[$indexDir]);
+            movePlayer();
             $movedThisTurn = true;
             $tryVisited = false;
         }
@@ -282,7 +287,7 @@ while (!$goalFound) {
 
 
     // but atteint ?
-    if (checkIfGoalReached($playerCoord)) {
+    if (checkIfGoalReached()) {
         print_r("GOAL FOUND !\n");
         print_r("\n");
         $goalFound = true;
@@ -300,7 +305,7 @@ while (!$goalFound) {
         //print_r("crossroad cleared\n");
     }
 
-    print_r("end of loop\n");
+    //print_r("end of loop\n");
 $w3++;
     // secu pour éviter la boucle infinie
     if ($w3 === 150) {

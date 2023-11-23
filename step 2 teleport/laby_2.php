@@ -325,22 +325,22 @@ while (!$goalFound) {
     if ($teleporting) {
         $teleporting = false;
 
+        // je supprime le dernier carrefour de la liste
         array_pop($listOfCrossroadsId);
         array_pop($listOfCrossroadsCoord);
+
+        // je supprime les cases visitées inutiles
+        $path = array_slice($path, 0, $cellId);
     }
 
 }
 
 if ($goalFound) {
 
-    // clean the path
-    $path = array_slice($path, 0, intval($cellId-1));
+    // format the path
     foreach ($path as $key => $coord) {
         $path[$key] = "{".join(',',$coord)."} ";
     }
-    // add goal to path
-    $goal = "{".join(',',coordGoal)."} ";
-    array_push($path, $goal);
 
     print_r("YOUR BEST PATH :\n");
     print_r(join(' -> ', $path )."\n");

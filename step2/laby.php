@@ -142,7 +142,7 @@ print_r("LOOP BEGIN HERE ----------------------------\n");
                 print_r("w1\n");
             }
             // d'abord les cases non visitées
-            if (checkDir($playerCoord, dir[$indexDir]) === "  ") {
+            if (contentOfCellInDir($playerCoord, dir[$indexDir]) === "  ") {
                 // si pas de mur ET pas visitée on avance
 
                 //TODO : ajouter un check crossing G et D !!!
@@ -194,10 +194,10 @@ print_r("LOOP BEGIN HERE ----------------------------\n");
 // si pas le choix, je cherche une case déjà visitée avec le moins de riz
             $oldestPath = 999;
             for ($i=0; $i<count(dir); $i++) {
-                $val = intval(checkDir($playerCoord, dir[$i]), 10 );
+                $val = intval(contentOfCellInDir($playerCoord, dir[$i]), 10 );
 
                 if ($val > 0 && $val < $oldestPath) { // /!\ 0 serait un mur
-                    $oldestPath = intval(checkDir($playerCoord, dir[$i]), 10 );
+                    $oldestPath = intval(contentOfCellInDir($playerCoord, dir[$i]), 10 );
                     $indexDir = $i;
                 }
             }

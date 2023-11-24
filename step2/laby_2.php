@@ -60,7 +60,7 @@ $map3 = [
 const coordStart = [1,1]; // [y,x]
 const coordGoal = [8,4];
 
-const speed = 3*100000000; // ns
+const speed = 6*100000000; // ns
 
 const dir = ["S","E","N","W"];
 $indexDir = 0;
@@ -196,7 +196,7 @@ while (!$goalFound) {
         $nOfWay = 0;
         for ($i=0; $i<count(dir); $i++) {
 
-            if (checkDir(dir[$i]) === '  ') {
+            if (contentOfCellInDir(dir[$i]) === '  ') {
                 $nOfWay++;
                 if ($nOfWay === 2) { // 2 to avoid duplicates
                     $listOfCrossroads[] = $cellId;
@@ -222,7 +222,7 @@ while (!$goalFound) {
                 print_r("w1\n");
             }
             // d'abord les cases non visitées
-            if (checkDir(dir[$indexDir]) === "  ") {
+            if (contentOfCellInDir(dir[$indexDir]) === "  ") {
                 // si pas de mur ET pas visitée on avance
                 movePlayer();
                 $movedThisTurn = true;
@@ -259,7 +259,7 @@ while (!$goalFound) {
             $closestCrossroad = 999;
 
             for ($i=0; $i<count(dir); $i++) {
-                $val = intval(checkDir(dir[$i]), 10 );
+                $val = intval(contentOfCellInDir(dir[$i]), 10 );
 
                 // est-ce qu'il y a un carrefour a visiter avant ?
                 //print_r("try crossroads : ");
@@ -268,7 +268,7 @@ while (!$goalFound) {
                     $failures = 0; // je vais continuer à chercher une case sans mur
 
                     if ($val > 0 && $val < $oldestPath) { // /!\ 0 serait un mur
-                        $oldestPath = intval(checkDir(dir[$i]), 10 );
+                        $oldestPath = intval(contentOfCellInDir(dir[$i]), 10 );
                         $indexDir = $i;
                     }
                 } else {
